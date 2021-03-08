@@ -1,13 +1,13 @@
-package dev.owuor91.rabbitcalc;
+package service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class RabbitCalcApplication {
+public class RestApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(RabbitCalcApplication.class, args);
+		SpringApplication.run(RestApplication.class, args);
 	}
 
 }
