@@ -14,6 +14,7 @@ mvn test
 ```
 
 ## Build and Run Project
+Ensure you have docker and maven installed locally
 
 ```sh
 docker-compose up -d
