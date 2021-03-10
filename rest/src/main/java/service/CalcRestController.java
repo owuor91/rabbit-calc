@@ -3,6 +3,8 @@ package service;
 import core.Constants;
 import core.Operands;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import service.errors.DivisionByZeroException;
 
 @RestController
 public class CalcRestController {
@@ -21,51 +24,34 @@ public class CalcRestController {
   private static Logger logger = LoggerFactory.getLogger(CalcRestController.class);
 
   @GetMapping(value = "/sum")
-  public ResponseEntity<CalcResult> sum(@RequestParam("a") String a, @RequestParam("b") String b) {
-    logger.info("received payload /sum?a=" + a + "&b=" + b);
-    Operands operands = new Operands(new BigDecimal(a), new BigDecimal(b));
-    setRequestId();
-    BigDecimal result =
-        (BigDecimal) rabbitTemplate.convertSendAndReceive(CALC_DIRECT_EXCHANGE,
-            Constants.SUM, operands);
-    logger.info("Received result " + result);
+  public ResponseEntity<CalcResult> sum(@RequestParam("a") String a, @RequestParam("b") String b)
+      throws NumberFormatException {
+    BigDecimal result = sanitizeAndSendMessage(a, b, Constants.SUM);
     return new ResponseEntity<CalcResult>(new CalcResult(result), HttpStatus.OK);
   }
 
   @GetMapping(value = "/subtract")
   public ResponseEntity<CalcResult> subtract(@RequestParam("a") String a,
-      @RequestParam("b") String b) {
-    logger.info("received payload /subtract?a=" + a + "&b=" + b);
-    Operands operands = new Operands(new BigDecimal(a), new BigDecimal(b));
-    setRequestId();
-    BigDecimal result =
-        (BigDecimal) rabbitTemplate.convertSendAndReceive(CALC_DIRECT_EXCHANGE,
-            Constants.SUBTRACT, operands);
-    logger.info("Received result " + result);
+      @RequestParam("b") String b) throws NumberFormatException {
+    BigDecimal result = sanitizeAndSendMessage(a, b, Constants.SUBTRACT);
     return new ResponseEntity<CalcResult>(new CalcResult(result), HttpStatus.OK);
   }
 
   @GetMapping(value = "/divide")
   public ResponseEntity<CalcResult> divide(@RequestParam("a") String a,
-      @RequestParam("b") String b) {
-    logger.info("received payload /divide?a=" + a + "&b=" + b);
-    Operands operands = new Operands(new BigDecimal(a), new BigDecimal(b));
-    BigDecimal result =
-        (BigDecimal) rabbitTemplate.convertSendAndReceive(CALC_DIRECT_EXCHANGE,
-            Constants.DIVIDE, operands);
-    logger.info("Received result " + result);
+      @RequestParam("b") String b) throws DivisionByZeroException, NumberFormatException {
+    List<String> forbidden = Arrays.asList("0", "0.0");
+    if (forbidden.contains(a) || forbidden.contains(b)) {
+      throw new DivisionByZeroException("Division by zero forbidden");
+    }
+    BigDecimal result = sanitizeAndSendMessage(a, b, Constants.DIVIDE);
     return new ResponseEntity<CalcResult>(new CalcResult(result), HttpStatus.OK);
   }
 
   @GetMapping(value = "/multiply")
   public ResponseEntity<CalcResult> multiply(@RequestParam("a") String a,
-      @RequestParam("b") String b) {
-    logger.info("received payload /multiply?a=" + a + "&b=" + b);
-    Operands operands = new Operands(new BigDecimal(a), new BigDecimal(b));
-    BigDecimal result =
-        (BigDecimal) rabbitTemplate.convertSendAndReceive(CALC_DIRECT_EXCHANGE,
-            Constants.MULTIPLY, operands);
-    logger.info("Received result " + result);
+      @RequestParam("b") String b) throws NumberFormatException {
+    BigDecimal result = sanitizeAndSendMessage(a, b, Constants.MULTIPLY);
     return new ResponseEntity<CalcResult>(new CalcResult(result), HttpStatus.OK);
   }
 
@@ -77,5 +63,22 @@ public class CalcRestController {
       }
       return message;
     });
+  }
+
+  private BigDecimal sanitizeAndSendMessage(String a, String b, String operation)
+      throws NumberFormatException {
+    logger.info("received payload /" + operation + "?a=" + a + "&b=" + b);
+    try {
+      BigDecimal operand1 = new BigDecimal(a);
+      BigDecimal operand2 = new BigDecimal(b);
+      Operands operands = new Operands(operand1, operand2);
+      setRequestId();
+      BigDecimal result = (BigDecimal) rabbitTemplate.convertSendAndReceive(CALC_DIRECT_EXCHANGE,
+          operation, operands);
+      logger.info("Received result " + result);
+      return result;
+    } catch (NumberFormatException e) {
+      throw new NumberFormatException("Invalid operand passed");
+    }
   }
 }
