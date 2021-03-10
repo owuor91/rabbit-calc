@@ -2,22 +2,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>rabbit-calc</artifactId>
-    <groupId>dev.owuor91</groupId>
-    <version>0.0.1-SNAPSHOT</version>
-  </parent>
-  <modelVersion>4.0.0</modelVersion>
-
-  <artifactId>rest</artifactId>
   <dependencies>
     <dependency>
       <groupId>dev.owuor91</groupId>
       <artifactId>common</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.1</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>rest</artifactId>
+  <parent>
+    <artifactId>rabbit-calc</artifactId>
+    <groupId>dev.owuor91</groupId>
+    <version>0.0.1</version>
+  </parent>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
